@@ -1,7 +1,8 @@
 #include <Arduino.h>
 
-#define btnStart 22
-#define btnStop 23
+#define btnStart 15
+#define btnStop 4
+
 unsigned long startTime = 0;
 unsigned long elapsedTime = 0;
 bool timerRunning = false;
@@ -16,22 +17,32 @@ void setup()
 
 void loop()
 {
+  // for start button
   if (digitalRead(btnStart) == LOW)
   {
     timerRunning = true;
     Serial.print("Timer state changed to ");
     Serial.println("running");
-
+    // toglle state timer
     if (timerRunning)
     {
       startTime = millis() - elapsedTime;
     }
   }
+  // stop timer
   if (digitalRead(btnStop) == LOW)
   {
-    timerRunning = false;
-    Serial.print("Timer state changed to ");
-    Serial.println("stopped");
+    // if timer stoped you can't stop timer
+    if (!timerRunning)
+    {
+      Serial.println("if timer stoped you can't stop timer");
+    }
+    else
+    {
+      timerRunning = false;
+      Serial.print("Timer state changed to ");
+      Serial.println("stopped");
+    }
   }
   delay(50);
 
