@@ -1,70 +1,56 @@
 #include <Arduino.h>
+#include <LiquidCrystal_I2C.h>
+#include <string>
 
-#define btnStart 15
-#define btnStop 4
+#include "Timer.h"
+#include "timeConverter.h"
 
-unsigned long startTime = 0;
-unsigned long elapsedTime = 0;
-bool timerRunning = false;
+#define BUZZER_PIN 18
+
+#define BTN_START_PIN 15
+#define BTN_STOP_PIN 4
+#define BTN_CLEAR_TIME_PIN 16
+
+// time in miliseconds
+long long workTime = timeStringToMilliseconds("01:00:00");
+long long relaxTime = timeStringToMilliseconds("00:10:00");
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+Timer MyTimer(relaxTime, workTime, lcd);
 
 void setup()
 {
   Serial.begin(115200);
-  pinMode(btnStart, INPUT_PULLUP);
-  pinMode(btnStop, INPUT_PULLUP);
-  startTime = millis();
+  // lcd init
+  lcd.init();
+  lcd.clear();
+  lcd.backlight();
+
+  lcd.setCursor(0, 1);
+  lcd.print("Press BTN start");
+
+  pinMode(BUZZER_PIN, OUTPUT);
+
+  pinMode(BTN_START_PIN, INPUT_PULLUP);
+  pinMode(BTN_STOP_PIN, INPUT_PULLUP);
+  pinMode(BTN_CLEAR_TIME_PIN, INPUT_PULLUP);
 }
 
 void loop()
 {
-  // for start button
-  if (digitalRead(btnStart) == LOW)
-  {
-    timerRunning = true;
-    Serial.print("Timer state changed to ");
-    Serial.println("running");
-    // toglle state timer
-    if (timerRunning)
-    {
-      startTime = millis() - elapsedTime;
-    }
-  }
-  // stop timer
-  if (digitalRead(btnStop) == LOW)
-  {
-    // if timer stoped you can't stop timer
-    if (!timerRunning)
-    {
-      Serial.println("if timer stoped you can't stop timer");
-    }
-    else
-    {
-      timerRunning = false;
-      Serial.print("Timer state changed to ");
-      Serial.println("stopped");
-    }
-  }
-  delay(50);
+  // loop for time work
+  MyTimer.TimerLoop();
 
-  if (timerRunning)
-  {
-    unsigned long currentTime = millis();
-    elapsedTime = currentTime - startTime;
+  if (digitalRead(BTN_CLEAR_TIME_PIN) == LOW)
+    MyTimer.Clear();
 
-    unsigned long hours = (elapsedTime / 3600000) % 24;
-    unsigned long minutes = (elapsedTime / 60000) % 60;
-    unsigned long seconds = (elapsedTime / 1000) % 60;
+  // start
+  if (digitalRead(BTN_START_PIN) == LOW)
+    MyTimer.Start();
 
-    Serial.print(hours < 10 ? "0" : "");
-    Serial.print(hours);
-    Serial.print(":");
-    Serial.print(minutes < 10 ? "0" : "");
-    Serial.print(minutes);
-    Serial.print(":");
-    Serial.print(seconds < 10 ? "0" : "");
-    Serial.print(seconds);
-    Serial.println("");
-  }
+  // stop
+  if (digitalRead(BTN_STOP_PIN) == LOW)
+    MyTimer.Pause();
 
-  delay(1000);
+  delay(500);
 }
