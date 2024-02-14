@@ -1,0 +1,1 @@
+void melody1(int BUZZER_PIN);
